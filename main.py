@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -10,10 +11,33 @@ from services.auth_service import hash_password
 from config import settings
 from routers import auth, admin, gallery
 
-# ── Створюємо таблиці ─────────────────────────────
-Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="📸 Remote Gallery", version="1.0.0")
+def create_default_admin():
+    Base.metadata.create_all(bind=engine)
+    db: Session = SessionLocal()
+    try:
+        exists = db.query(User).filter(User.is_admin == True).first()
+        if not exists:
+            admin_user = User(
+                username=settings.ADMIN_USERNAME,
+                password_hash=hash_password(settings.ADMIN_PASSWORD),
+                is_admin=True,
+                is_active=True,
+            )
+            db.add(admin_user)
+            db.commit()
+            print(f"  ✅ Адмін '{settings.ADMIN_USERNAME}' створено автоматично")
+    finally:
+        db.close()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    create_default_admin()
+    yield
+
+
+app = FastAPI(title="📸 Remote Gallery", version="1.0.0", lifespan=lifespan)
 
 # ── Підключаємо роутери ───────────────────────────
 app.include_router(auth.router)
@@ -32,26 +56,6 @@ def root():
 @app.get("/admin-panel")
 def admin_panel():
     return FileResponse("static/admin.html")
-
-
-# ── Створення першого адміна з .env ───────────────
-@app.on_event("startup")
-def create_default_admin():
-    db: Session = SessionLocal()
-    try:
-        exists = db.query(User).filter(User.is_admin == True).first()
-        if not exists:
-            admin_user = User(
-                username=settings.ADMIN_USERNAME,
-                password_hash=hash_password(settings.ADMIN_PASSWORD),
-                is_admin=True,
-                is_active=True,
-            )
-            db.add(admin_user)
-            db.commit()
-            print(f"  ✅ Адмін '{settings.ADMIN_USERNAME}' створено автоматично")
-    finally:
-        db.close()
 
 
 # ── Запуск ────────────────────────────────────────
