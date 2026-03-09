@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚙️ Адмінка</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0d0d0f; --surface:#17171a; --surface2:#1e1e22; --border:#2a2a30;
+    --accent:#c8a96e; --text:#f0ede8; --text2:#888880; --radius:10px;
+    --red:#e05555; --green:#55a855;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;}
+
+  /* Login */
+  .login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;}
+  .login-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px 32px;width:100%;max-width:360px;}
+  .login-title{font-family:'Playfair Display',serif;font-size:22px;color:var(--accent);text-align:center;margin-bottom:20px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12px;color:var(--text2);margin-bottom:5px;}
+  .field input,.field select{width:100%;padding:11px 13px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:14px;font-family:inherit;outline:none;}
+  .field input:focus,.field select:focus{border-color:var(--accent);}
+  .btn{padding:10px 18px;border:none;border-radius:var(--radius);font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;transition:opacity .2s;}
+  .btn:hover{opacity:.85;}
+  .btn-primary{background:var(--accent);color:#1a1408;}
+  .btn-danger{background:var(--red);color:#fff;}
+  .btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+  .btn-sm{padding:6px 12px;font-size:12px;}
+  .login-err{background:#2a1515;border:1px solid #5a2020;color:#f08080;border-radius:var(--radius);padding:9px 13px;font-size:13px;margin-top:12px;display:none;}
+
+  /* Layout */
+  .header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:16px;}
+  .header-title{font-family:'Playfair Display',serif;font-size:18px;color:var(--accent);flex:1;}
+  .tabs{display:flex;gap:4px;background:var(--surface2);padding:4px;border-radius:var(--radius);margin:0 24px;}
+  .tab{padding:8px 18px;border-radius:8px;font-size:13px;cursor:pointer;border:none;background:transparent;color:var(--text2);font-family:inherit;transition:all .2s;}
+  .tab.active{background:var(--surface);color:var(--accent);font-weight:500;}
+  .container{max-width:900px;margin:0 auto;padding:24px;}
+  .section-title{font-size:16px;font-weight:500;margin-bottom:16px;color:var(--text);}
+
+  /* Cards */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:12px;}
+  .card-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .card-info{flex:1;}
+  .card-name{font-size:14px;font-weight:500;}
+  .card-meta{font-size:12px;color:var(--text2);margin-top:3px;}
+  .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500;}
+  .badge-admin{background:#3a2a0a;color:var(--accent);}
+  .badge-inactive{background:#2a1515;color:#f08080;}
+  .badge-active{background:#1a2a1a;color:#80c880;}
+
+  /* Form inline */
+  .form-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+  .form-row .field{margin:0;flex:1;min-width:140px;}
+  .form-row .btn{align-self:flex-end;white-space:nowrap;}
+
+  /* Access checkboxes */
+  .access-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+  .access-item{display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:12px;cursor:pointer;transition:all .2s;}
+  .access-item:hover{border-color:var(--accent);}
+  .access-item.granted{background:#2a1f0a;border-color:var(--accent);color:var(--accent);}
+  .access-item input{accent-color:var(--accent);}
+
+  /* Toast */
+  .toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 18px;font-size:13px;z-index:9999;transform:translateY(80px);opacity:0;transition:all .3s;}
+  .toast.show{transform:translateY(0);opacity:1;}
+  .toast.ok{border-color:var(--green);color:#80c880;}
+  .toast.err{border-color:var(--red);color:#f08080;}
+
+  /* Modal */
+  .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;align-items:center;justify-content:center;}
+  .modal-bg.open{display:flex;}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:400px;margin:16px;}
+  .modal-title{font-size:16px;font-weight:500;margin-bottom:20px;}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;}
+
+  .empty-state{text-align:center;color:var(--text2);padding:40px;font-size:14px;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-title">⚙️ Адмінка</div>
+    <div class="field"><label>Логін</label><input type="text" id="aUsername" placeholder="admin"></div>
+    <div class="field"><label>Пароль</label><input type="password" id="aPassword" placeholder="••••••••"></div>
+    <button class="btn btn-primary" style="width:100%;padding:12px" onclick="doLogin()">Увійти</button>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="adminPanel" style="display:none">
+  <div class="header">
+    <div class="header-title">⚙️ Адмінпанель</div>
+    <a href="/" class="btn btn-ghost btn-sm">📸 Галерея</a>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()">Вийти</button>
+  </div>
+
+  <div style="padding:16px 24px 0">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('users')">👥 Користувачі</button>
+      <button class="tab" onclick="switchTab('folders')">📁 Папки</button>
+      <button class="tab" onclick="switchTab('access')">🔑 Доступи</button>
+    </div>
+  </div>
+
+  <!-- USERS TAB -->
+  <div id="tabUsers" class="container">
+    <div class="section-title">Користувачі</div>
+    <div class="card">
+      <div class="section-title" style="font-size:14px;margin-bottom:12px">Новий користувач</div>
+      <div class="form-row">
+        <div class="field"><label>Логін</label><input type="text" id="newUsername" placeholder="username"></div>
+        <div class="field"><label>Пароль</label><input type="password" id="newPassword" placeholder="password"></div>
+        <div class="field" style="max-width:120px"><label>Роль</label>
+          <select id="newIsAdmin"><option value="false">Юзер</option><option value="true">Адмін</option></select>
+        </div>
+        <button class="btn btn-primary" onclick="createUser()">Додати</button>
+      </div>
+    </div>
+    <div id="usersList"></div>
+  </div>
+
+  <!-- FOLDERS TAB -->
+  <div id="tabFolders" class="container" style="display:none">
+    <div class="section-title">Папки</div>
+    <div class="card">
+      <div class="section-title" style="font-size:14px;margin-bottom:12px">Нова папка</div>
+      <div class="form-row">
+        <div class="field"><label>Назва</label><input type="text" id="newFolderName" placeholder="Моє фото"></div>
+        <div class="field"><label>Шлях на диску</label><input type="text" id="newFolderPath" placeholder="F:\Photos\MyFolder"></div>
+        <button class="btn btn-primary" onclick="createFolder()">Додати</button>
+      </div>
+    </div>
+    <div id="foldersList"></div>
+  </div>
+
+  <!-- ACCESS TAB -->
+  <div id="tabAccess" class="container" style="display:none">
+    <div class="section-title">Управління доступами</div>
+    <div class="field" style="max-width:300px;margin-bottom:20px">
+      <label>Оберіть користувача</label>
+      <select id="accessUserSelect" onchange="loadUserAccess()">
+        <option value="">— оберіть юзера —</option>
+      </select>
+    </div>
+    <div id="accessPanel"></div>
+  </div>
+</div>
+
+<!-- EDIT USER MODAL -->
+<div class="modal-bg" id="editUserModal">
+  <div class="modal">
+    <div class="modal-title">✏️ Редагувати користувача</div>
+    <input type="hidden" id="editUserId">
+    <div class="field"><label>Логін</label><input type="text" id="editUsername"></div>
+    <div class="field"><label>Новий пароль (залиш порожнім щоб не змінювати)</label><input type="password" id="editPassword" placeholder="••••••••"></div>
+    <div class="field"><label>Роль</label>
+      <select id="editIsAdmin"><option value="false">Юзер</option><option value="true">Адмін</option></select>
+    </div>
+    <div class="field"><label>Статус</label>
+      <select id="editIsActive"><option value="true">Активний</option><option value="false">Деактивований</option></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('editUserModal')">Скасувати</button>
+      <button class="btn btn-primary" onclick="saveUser()">Зберегти</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT FOLDER MODAL -->
+<div class="modal-bg" id="editFolderModal">
+  <div class="modal">
+    <div class="modal-title">✏️ Редагувати папку</div>
+    <input type="hidden" id="editFolderId">
+    <div class="field"><label>Назва</label><input type="text" id="editFolderName"></div>
+    <div class="field"><label>Шлях на диску</label><input type="text" id="editFolderPath"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('editFolderModal')">Скасувати</button>
+      <button class="btn btn-primary" onclick="saveFolder()">Зберегти</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let token = localStorage.getItem('admin_token') || null;
+let allFolders = [];
+let allUsers = [];
+
+// ── AUTH ──────────────────────────────────────────
+async function doLogin() {
+  const username = document.getElementById('aUsername').value.trim();
+  const password = document.getElementById('aPassword').value;
+  const errEl = document.getElementById('loginErr');
+  errEl.style.display = 'none';
+
+  const res = await fetch('/auth/login', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({username, password})
+  });
+
+  if (!res.ok) {
+    const d = await res.json();
+    errEl.textContent = d.detail || 'Невірний логін або пароль';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const data = await res.json();
+  // Перевіряємо чи адмін
+  const payload = JSON.parse(atob(data.access_token.split('.')[1]));
+  if (!payload.is_admin) {
+    errEl.textContent = 'Доступ тільки для адміністратора';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  token = data.access_token;
+  localStorage.setItem('admin_token', token);
+  showAdmin();
+}
+
+function doLogout() {
+  token = null;
+  localStorage.removeItem('admin_token');
+  document.getElementById('adminPanel').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+
+function showAdmin() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('adminPanel').style.display = 'block';
+  loadAll();
+}
+
+// ── API ───────────────────────────────────────────
+async function api(method, url, body) {
+  const opts = { method, headers:{'Authorization':'Bearer '+token} };
+  if (body) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+  const res = await fetch(url, opts);
+  if (res.status === 401) { doLogout(); return null; }
+  if (res.status === 204) return true;
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || 'Помилка');
+  return data;
+}
+
+// ── LOAD ALL ──────────────────────────────────────
+async function loadAll() {
+  [allUsers, allFolders] = await Promise.all([
+    api('GET', '/admin/users'),
+    api('GET', '/admin/folders'),
+  ]);
+  renderUsers();
+  renderFolders();
+  populateAccessSelect();
+}
+
+// ── TABS ──────────────────────────────────────────
+function switchTab(tab) {
+  ['users','folders','access'].forEach(t => {
+    document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).style.display = t===tab ? 'block' : 'none';
+    document.querySelectorAll('.tab').forEach((el,i) => el.classList.toggle('active', ['users','folders','access'][i]===tab));
+  });
+}
+
+// ── USERS ─────────────────────────────────────────
+function renderUsers() {
+  const el = document.getElementById('usersList');
+  if (!allUsers.length) { el.innerHTML = '<div class="empty-state">Немає користувачів</div>'; return; }
+  el.innerHTML = allUsers.map(u => `
+    <div class="card">
+      <div class="card-row">
+        <div class="card-info">
+          <div class="card-name">${escHtml(u.username)}
+            ${u.is_admin ? '<span class="badge badge-admin">Адмін</span>' : ''}
+            <span class="badge ${u.is_active ? 'badge-active' : 'badge-inactive'}">${u.is_active ? 'Активний' : 'Деактивований'}</span>
+          </div>
+          <div class="card-meta">Створено: ${new Date(u.created_at).toLocaleDateString('uk')}</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="openEditUser(${u.id})">✏️ Редагувати</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id},'${escHtml(u.username)}')">🗑</button>
+      </div>
+    </div>`).join('');
+}
+
+async function createUser() {
+  const username = document.getElementById('newUsername').value.trim();
+  const password = document.getElementById('newPassword').value;
+  const is_admin = document.getElementById('newIsAdmin').value === 'true';
+  if (!username || !password) { toast('Заповніть логін і пароль','err'); return; }
+  try {
+    await api('POST','/admin/users',{username,password,is_admin});
+    document.getElementById('newUsername').value = '';
+    document.getElementById('newPassword').value = '';
+    toast('Користувача створено','ok');
+    await loadAll();
+  } catch(e) { toast(e.message,'err'); }
+}
+
+function openEditUser(id) {
+  const u = allUsers.find(u=>u.id===id);
+  document.getElementById('editUserId').value = id;
+  document.getElementById('editUsername').value = u.username;
+  document.getElementById('editPassword').value = '';
+  document.getElementById('editIsAdmin').value = u.is_admin ? 'true' : 'false';
+  document.getElementById('editIsActive').value = u.is_active ? 'true' : 'false';
+  openModal('editUserModal');
+}
+
+async function saveUser() {
+  const id = document.getElementById('editUserId').value;
+  const body = {
+    username: document.getElementById('editUsername').value.trim(),
+    is_admin: document.getElementById('editIsAdmin').value === 'true',
+    is_active: document.getElementById('editIsActive').value === 'true',
+  };
+  const pw = document.getElementById('editPassword').value;
+  if (pw) body.password = pw;
+  try {
+    await api('PUT',`/admin/users/${id}`,body);
+    toast('Збережено','ok');
+    closeModal('editUserModal');
+    await loadAll();
+  } catch(e) { toast(e.message,'err'); }
+}
+
+async function deleteUser(id, name) {
+  if (!confirm(`Видалити користувача "${name}"?`)) return;
+  try {
+    await api('DELETE',`/admin/users/${id}`);
+    toast('Видалено','ok');
+    await loadAll();
+  } catch(e) { toast(e.message,'err'); }
+}
+
+// ── FOLDERS ───────────────────────────────────────
+function renderFolders() {
+  const el = document.getElementById('foldersList');
+  if (!allFolders.length) { el.innerHTML = '<div class="empty-state">Немає папок</div>'; return; }
+  el.innerHTML = allFolders.map(f => `
+    <div class="card">
+      <div class="card-row">
+        <div class="card-info">
+          <div class="card-name">📁 ${escHtml(f.name)}</div>
+          <div class="card-meta">${escHtml(f.path)}</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="openEditFolder(${f.id})">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteFolder(${f.id},'${escHtml(f.name)}')">🗑</button>
+      </div>
+    </div>`).join('');
+}
+
+async function createFolder() {
+  const name = document.getElementById('newFolderName').value.trim();
+  const path = document.getElementById('newFolderPath').value.trim();
+  if (!name || !path) { toast('Заповніть назву і шлях','err'); return; }
+  try {
+    await api('POST','/admin/folders',{name,path});
+    document.getElementById('newFolderName').value = '';
+    document.getElementById('newFolderPath').value = '';
+    toast('Папку додано','ok');
+    await loadAll();
+  } catch(e) { toast(e.message,'err'); }
+}
+
+function openEditFolder(id) {
+  const f = allFolders.find(f=>f.id===id);
+  document.getElementById('editFolderId').value = id;
+  document.getElementById('editFolderName').value = f.name;
+  document.getElementById('editFolderPath').value = f.path;
+  openModal('editFolderModal');
+}
+
+async function saveFolder() {
+  const id = document.getElementById('editFolderId').value;
+  const body = {
+    name: document.getElementById('editFolderName').value.trim(),
+    path: document.getElementById('editFolderPath').value.trim(),
+  };
+  try {
+    await api('PUT',`/admin/folders/${id}`,body);
+    toast('Збережено','ok');
+    closeModal('editFolderModal');
+    await loadAll();
+  } catch(e) { toast(e.message,'err'); }
+}
+
+async function deleteFolder(id, name) {
+  if (!confirm(`Видалити папку "${name}" з бази? (Файли на диску не видаляться)`)) return;
+  try {
+    await api('DELETE',`/admin/folders/${id}`);
+    toast('Видалено','ok');
+    await loadAll();
+  } catch(e) { toast(e.message,'err'); }
+}
+
+// ── ACCESS ────────────────────────────────────────
+function populateAccessSelect() {
+  const sel = document.getElementById('accessUserSelect');
+  const val = sel.value;
+  sel.innerHTML = '<option value="">— оберіть юзера —</option>' +
+    allUsers.filter(u=>!u.is_admin).map(u=>`<option value="${u.id}">${escHtml(u.username)}</option>`).join('');
+  if (val) sel.value = val;
+}
+
+async function loadUserAccess() {
+  const userId = document.getElementById('accessUserSelect').value;
+  const panel = document.getElementById('accessPanel');
+  if (!userId) { panel.innerHTML = ''; return; }
+
+  const granted = await api('GET', `/admin/access/${userId}`);
+  const grantedIds = new Set((granted||[]).map(f=>f.id));
+
+  if (!allFolders.length) {
+    panel.innerHTML = '<div class="empty-state">Немає папок. Спочатку додайте папки.</div>';
+    return;
+  }
+
+  panel.innerHTML = `<div class="card"><div class="section-title" style="font-size:14px;margin-bottom:10px">Доступні папки</div>
+    <div class="access-list">
+      ${allFolders.map(f=>`
+        <div class="access-item ${grantedIds.has(f.id)?'granted':''}" onclick="toggleAccess(${userId},${f.id},${grantedIds.has(f.id)},this)">
+          📁 ${escHtml(f.name)}
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+async function toggleAccess(userId, folderId, isGranted, el) {
+  try {
+    if (isGranted) {
+      await api('DELETE','/admin/access',{user_id:+userId,folder_id:folderId});
+      el.classList.remove('granted');
+    } else {
+      await api('POST','/admin/access',{user_id:+userId,folder_id:folderId});
+      el.classList.add('granted');
+    }
+    // Оновлюємо onclick
+    el.onclick = () => toggleAccess(userId, folderId, !isGranted, el);
+    toast(isGranted ? 'Доступ відкликано' : 'Доступ надано', 'ok');
+  } catch(e) { toast(e.message,'err'); }
+}
+
+// ── HELPERS ───────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+let toastTimer;
+function toast(msg, type='ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+document.getElementById('aPassword').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+
+// Закриття модалки по кліку на фон
+document.querySelectorAll('.modal-bg').forEach(el=>{
+  el.addEventListener('click', e=>{ if(e.target===el) el.classList.remove('open'); });
+});
+
+// ── INIT ──────────────────────────────────────────
+if (token) {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    if (payload.is_admin && payload.exp * 1000 > Date.now()) showAdmin();
+    else doLogout();
+  } catch { doLogout(); }
+}
+</script>
+</body>
+</html>
